@@ -62,3 +62,14 @@ class AnomalyDetector:
 
         is_anomaly = bool(label == -1)
         return is_anomaly, float(score)
+    
+    @staticmethod
+    def get_severity(score: float) -> str:
+        if score < -0.35:
+            return "critical"
+        elif score < -0.2:
+            return "high"
+        elif score < -0.1:
+            return "medium"
+        else:
+            return "low"

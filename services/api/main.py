@@ -4,12 +4,14 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from pydantic import BaseModel, Field
 
 sys.path.insert(0, "/app/anomaly_detector")
 from detector import AnomalyDetector
 
+sys.path.insert(0, "/app/llm_explainer")
+from explainer import explain_anomaly
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,14 +59,24 @@ async def health_check():
 
 
 @app.post("/api/ingest")
-async def ingest_metrics(payload: MetricsPayload, request: Request):
+async def ingest_metrics(payload: MetricsPayload, request: Request, background_tasks: BackgroundTasks):
     detector = request.app.state.detector
     features = [payload.cpu, payload.memory, payload.error_rate, payload.latency_p99]
     is_anomaly, score = detector.predict(features)
+    severity = AnomalyDetector.get_severity(score)
+    if is_anomaly:
+        background_tasks.add_task(
+            explain_anomaly,          # the function
+            payload.service,          # arg 1: service
+            payload.dict(),           # arg 2: metrics dict
+            score,                    # arg 3: anomaly score
+            payload.log_snippet or "" # arg 4: log snippet
+        )
     return {
         "received": True,
         "service": payload.service,
         "anomaly_detected": is_anomaly,
         "anomaly_score": round(score, 4),
+        "severity": severity,            # ← add this
         "message": "Anomaly detected!" if is_anomaly else "All clear",
     }
