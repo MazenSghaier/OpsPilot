@@ -60,5 +60,5 @@ class AnomalyDetector:
         label = self._model.predict(X)[0]        # returns 1 or -1
         score = self._model.score_samples(X)[0]  # returns a float
 
-        is_anomaly = label == -1
+        is_anomaly = bool(label == -1)
         return is_anomaly, float(score)
