@@ -1,6 +1,7 @@
 import os
 import sys
 from contextlib import asynccontextmanager
+from prometheus_fastapi_instrumentator import Instrumentator
 from typing import Optional
 
 import httpx
@@ -12,6 +13,8 @@ from detector import AnomalyDetector
 
 sys.path.insert(0, "/app/llm_explainer")
 from explainer import explain_anomaly
+
+from routers.alerts import router as alerts_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,7 +33,9 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
-
+app.include_router(alerts_router)
+# Add Prometheus instrumentation (collects metrics on all endpoints)
+Instrumentator().instrument(app).expose(app)
 
 class MetricsPayload(BaseModel):
     service:     str
