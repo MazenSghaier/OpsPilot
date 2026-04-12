@@ -14,7 +14,7 @@ def _generate_training_data(n: int = 2000) -> np.ndarray:
 
     cpu        = rng.normal(loc=35,  scale=12, size=n).clip(1, 80)
     memory     = rng.normal(loc=50,  scale=15, size=n).clip(5, 85)
-    error_rate = rng.beta(a=1, b=50,           size=n)        # mostly near 0
+    error_rate = rng.beta(a=1, b=50,           size=n)        
     latency    = rng.normal(loc=200, scale=60, size=n).clip(10, 500)
 
     return np.column_stack([cpu, memory, error_rate, latency])

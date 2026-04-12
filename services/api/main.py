@@ -1,11 +1,11 @@
 import os
 import sys
 from contextlib import asynccontextmanager
-from prometheus_fastapi_instrumentator import Instrumentator
 from typing import Optional
 
 import httpx
 from fastapi import FastAPI, Request, BackgroundTasks
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, Field
 
 sys.path.insert(0, "/app/anomaly_detector")
@@ -14,7 +14,11 @@ from anomaly_detector.detector import AnomalyDetector
 sys.path.insert(0, "/app/llm_explainer")
 from llm_explainer.explainer import explain_anomaly
 
-from routers.alerts import router as alerts_router
+from routers.alerts  import router as alerts_router
+from routers.predict import router as predict_router
+from routers.predict import store_metric_history
+from routers.reports import router as reports_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,9 +37,13 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
 app.include_router(alerts_router)
-# Add Prometheus instrumentation (collects metrics on all endpoints)
+app.include_router(predict_router)
+app.include_router(reports_router)
+
 Instrumentator().instrument(app).expose(app)
+
 
 class MetricsPayload(BaseModel):
     service:     str
@@ -64,24 +72,33 @@ async def health_check():
 
 
 @app.post("/api/ingest")
-async def ingest_metrics(payload: MetricsPayload, request: Request, background_tasks: BackgroundTasks):
+async def ingest_metrics(
+    payload: MetricsPayload,
+    request: Request,
+    background_tasks: BackgroundTasks,
+):
     detector = request.app.state.detector
     features = [payload.cpu, payload.memory, payload.error_rate, payload.latency_p99]
     is_anomaly, score = detector.predict(features)
     severity = AnomalyDetector.get_severity(score)
+
+    background_tasks.add_task(store_metric_history, payload.service, payload.cpu, "cpu")
+    background_tasks.add_task(store_metric_history, payload.service, payload.memory, "memory")
+
     if is_anomaly:
         background_tasks.add_task(
-            explain_anomaly,          # the function
-            payload.service,          # arg 1: service
-            payload.dict(),           # arg 2: metrics dict
-            score,                    # arg 3: anomaly score
-            payload.log_snippet or "" # arg 4: log snippet
+            explain_anomaly,
+            payload.service,
+            payload.dict(),
+            score,
+            payload.log_snippet or "",
         )
+
     return {
-        "received": True,
-        "service": payload.service,
+        "received":        True,
+        "service":         payload.service,
         "anomaly_detected": is_anomaly,
-        "anomaly_score": round(score, 4),
-        "severity": severity,            # ← add this
-        "message": "Anomaly detected!" if is_anomaly else "All clear",
+        "anomaly_score":   round(score, 4),
+        "severity":        severity,
+        "message":         "Anomaly detected!" if is_anomaly else "All clear",
     }
