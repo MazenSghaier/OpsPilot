@@ -9,10 +9,10 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from pydantic import BaseModel, Field
 
 sys.path.insert(0, "/app/anomaly_detector")
-from detector import AnomalyDetector
+from anomaly_detector.detector import AnomalyDetector
 
 sys.path.insert(0, "/app/llm_explainer")
-from explainer import explain_anomaly
+from llm_explainer.explainer import explain_anomaly
 
 from routers.alerts import router as alerts_router
 
