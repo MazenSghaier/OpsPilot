@@ -1,5 +1,4 @@
 import os
-import sys
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -8,10 +7,8 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, Field
 
-sys.path.insert(0, "/app/anomaly_detector")
 from anomaly_detector.detector import AnomalyDetector
 
-sys.path.insert(0, "/app/llm_explainer")
 from llm_explainer.explainer import explain_anomaly
 
 from routers.alerts  import router as alerts_router
@@ -99,6 +96,6 @@ async def ingest_metrics(
         "service":         payload.service,
         "anomaly_detected": is_anomaly,
         "anomaly_score":   round(score, 4),
-        "severity":        severity,
+        "severity":         severity if is_anomaly else "none",
         "message":         "Anomaly detected!" if is_anomaly else "All clear",
     }

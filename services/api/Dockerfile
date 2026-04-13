@@ -11,7 +11,7 @@ COPY api/requirements.txt .
 RUN pip install --no-cache-dir --timeout=300 \
     fastapi uvicorn[standard] httpx pydantic \
     python-dotenv redis prometheus-fastapi-instrumentator \
-    supabase reportlab
+    supabase reportlab pytest
 
 # Install heavy ML packages separately
 RUN pip install --no-cache-dir --timeout=300 \

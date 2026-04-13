@@ -4,9 +4,8 @@ from fastapi import APIRouter
 import redis.asyncio as aioredis
 import os
 import json
-import sys
-sys.path.insert(0, "/app/predictor")
-from predictor import MetricPredictor
+
+from predictor.predictor import MetricPredictor
 
 router = APIRouter()
 

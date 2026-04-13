@@ -1,9 +1,10 @@
 import json
 import os
 import httpx
-from rag import search_similar_incidents
+from llm_explainer.rag import search_similar_incidents
 import redis.asyncio as aioredis
-from detector import AnomalyDetector
+
+from anomaly_detector.detector import AnomalyDetector
 
 OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
 

@@ -85,7 +85,8 @@ services:
     volumes:
       - ./services/api:/app
       - ./services/anomaly_detector:/app/anomaly_detector 
-      - ./services/llm_explainer:/app/llm_explainer       
+      - ./services/llm_explainer:/app/llm_explainer
+      - ./services/predictor:/app/predictor       
       - model_cache:/app/models
     depends_on:
       redis:
