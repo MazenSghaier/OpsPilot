@@ -6,7 +6,7 @@ import os
 import json
 import sys
 sys.path.insert(0, "/app/predictor")
-from predictor import MetricPredicto
+from predictor import MetricPredictor
 
 router = APIRouter()
 
@@ -52,7 +52,6 @@ async def predict(service: str):
             "message": "Not enough data to make prediction"
         }
 
-    # 🔹 4. Run Prophet predictor
     predictor = MetricPredictor()
     predictor.fit(history)
 
